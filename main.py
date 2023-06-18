@@ -4,11 +4,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from pandastable import Table, TableModel
+import matplotlib.pyplot as plt
+import pickle
 
-# Model
 model = None
+df = None
 
 def train_model():
+    global df
     try:
         # Krok 1: Pobranie danych
         data_url = 'https://archive.ics.uci.edu/ml/machine-learning-databases/heart-disease/processed.cleveland.data'
@@ -32,10 +35,32 @@ def train_model():
         # Krok 5: Testowanie modelu
         y_pred = model.predict(X_test)
         accuracy = accuracy_score(y_test, y_pred)
-        accuracy_label.config(text=f"Dokładność modelu: {accuracy}")
+        accuracy_label.config(text=f"Dokładność modelu: {accuracy}", fg="green")
 
     except ValueError:
-        accuracy_label.config(text="")
+        accuracy_label.config(text="", fg="red")
+
+def test_model():
+    try:
+        global model, df
+        if model is None:
+            raise ValueError("Najpierw trenuj model")
+
+        global df
+        X = df.drop('target', axis=1)
+        y = df['target']
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        y_pred_train = model.predict(X_train)
+        train_accuracy = accuracy_score(y_train, y_pred_train)
+
+        y_pred_test = model.predict(X_test)
+        test_accuracy = accuracy_score(y_test, y_pred_test)
+
+        accuracy_label.config(text=f"Dokładność treningowa: {train_accuracy}, Dokładność testowa: {test_accuracy}", fg="green")
+
+    except ValueError as e:
+        accuracy_label.config(text=str(e), fg="red")
 
 def predict():
     try:
@@ -51,10 +76,10 @@ def predict():
                     'slope': float(slope_entry.get()), 'ca': float(ca_entry.get()), 'thal': float(thal_entry.get())}
         new_data_df = pd.DataFrame([new_data])
         prediction = model.predict(new_data_df)
-        prediction_label.config(text=f"Wynik predykcji: {prediction}")
+        prediction_label.config(text=f"Wynik predykcji: {prediction}", fg="green")
 
     except ValueError as e:
-        prediction_label.config(text=str(e))
+        prediction_label.config(text=str(e), fg="red")
 
 def browse_data():
     data_url = 'https://archive.ics.uci.edu/ml/machine-learning-databases/heart-disease/processed.cleveland.data'
@@ -74,18 +99,92 @@ def browse_data():
     table = Table(frame, dataframe=df, showtoolbar=True, showstatusbar=True)
     table.show()
 
+def save_model():
+    try:
+        global model
+        if model is None:
+            raise ValueError("Najpierw trenuj model")
 
-# Tworzenie okna
+        # Zapisz model do pliku
+        with open('model.pkl', 'wb') as file:
+            pickle.dump(model, file)
+
+        accuracy_label.config(text="Model został zapisany", fg="green")
+
+    except ValueError as e:
+        accuracy_label.config(text=str(e), fg="red")
+
+def add_data():
+    try:
+        global df
+        if df is None:
+            return
+
+        new_data = {
+            'age': float(age_entry.get()),
+            'sex': float(sex_entry.get()),
+            'cp': float(cp_entry.get()),
+            'trestbps': float(trestbps_entry.get()),
+            'chol': float(chol_entry.get()),
+            'fbs': float(fbs_entry.get()),
+            'restecg': float(restecg_entry.get()),
+            'thalach': float(thalach_entry.get()),
+            'exang': float(exang_entry.get()),
+            'oldpeak': float(oldpeak_entry.get()),
+            'slope': float(slope_entry.get()),
+            'ca': float(ca_entry.get()),
+            'thal': float(thal_entry.get())
+        }
+
+        # Dodawanie nowych danych do istniejącego DataFrame
+        df = df.append(new_data, ignore_index=True)
+
+        accuracy_label.config(text="Dane zostały dodane", fg="green")
+
+    except ValueError as e:
+        accuracy_label.config(text=str(e), fg="red")
+
+def load_model():
+    try:
+        global model
+        # Odczytaj model z pliku
+        with open('model.pkl', 'rb') as file:
+            model = pickle.load(file)
+
+        accuracy_label.config(text="Model został wczytany", fg="green")
+
+    except FileNotFoundError:
+        accuracy_label.config(text="Nie znaleziono pliku z modelem", fg="red")
+    except Exception as e:
+        accuracy_label.config(text=str(e), fg="red")
+
+def visualize_data():
+    global df
+    if df is None:
+        return
+
+    # Wybierz dwie cechy do wizualizacji
+    feature1 = 'age'
+    feature2 = 'chol'
+
+    # Tworzenie wykresu
+    plt.figure(figsize=(8, 6))
+    plt.scatter(df[feature1], df[feature2], c=df['target'])
+    plt.xlabel(feature1)
+    plt.ylabel(feature2)
+    plt.title(f'Wizualizacja danych: {feature1} vs {feature2}')
+    plt.colorbar(label='target')
+    plt.show()
+
 window = tk.Tk()
-window.title("Projekt ML - Klasyfikacja Choroby Serca")
+window.title("Projekt Michal Tulej - Klasyfikacja Choroby Serca")
 
-# Tworzenie etykiet i pól wprowadzania danych
 age_label = tk.Label(window, text="Wiek:")
 age_label.pack()
 age_entry = tk.Entry(window)
 age_entry.pack()
 
-sex_label = tk.Label(window, text="Płeć(1 = mezczyzna; 0 = kobieta):")
+sex_label = tk.Label(window, text="Płeć(1 = mężczyzna; 0 = kobieta):")
 sex_label.pack()
 sex_entry = tk.Entry(window)
 sex_entry.pack()
@@ -140,24 +239,35 @@ ca_label.pack()
 ca_entry = tk.Entry(window)
 ca_entry.pack()
 
-thal_label = tk.Label(window, text="Thal:")
+thal_label = tk.Label(window, text="Tętno:")
 thal_label.pack()
 thal_entry = tk.Entry(window)
 thal_entry.pack()
 
 train_button = tk.Button(window, text="Trenuj Model", command=train_model)
-train_button.pack()
+train_button.pack(side=tk.LEFT, padx=5)
 
-test_button = tk.Button(window, text="Testuj Model", command=train_model)
-test_button.pack()
+test_button = tk.Button(window, text="Testuj Model", command=test_model)
+test_button.pack(side=tk.LEFT, padx=5)
 
 predict_button = tk.Button(window, text="Predykcja", command=predict)
-predict_button.pack()
+predict_button.pack(side=tk.LEFT, padx=5)
 
 browse_button = tk.Button(window, text="Przeglądaj Dane", command=browse_data)
-browse_button.pack()
+browse_button.pack(side=tk.LEFT, padx=5)
 
-# Etykiety wynikowe
+save_model_button = tk.Button(window, text="Zapisz Model", command=save_model)
+save_model_button.pack(side=tk.LEFT, padx=5)
+
+load_model_button = tk.Button(window, text="Wczytaj Model", command=load_model)
+load_model_button.pack(side=tk.LEFT, padx=5)
+
+visualize_button = tk.Button(window, text="Wizualizuj Dane", command=visualize_data)
+visualize_button.pack(side=tk.LEFT, padx=5)
+
+add_data_button = tk.Button(window, text="Dodaj Dane", command=add_data)
+add_data_button.pack(side=tk.LEFT, padx=5)
+
 accuracy_label = tk.Label(window, text="")
 accuracy_label.pack()
 
