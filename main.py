@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
-from pandastable import Table, TableModel
+from pandastable import Table
 import matplotlib.pyplot as plt
 import pickle
 
@@ -85,14 +85,13 @@ def browse_data():
     data_url = 'https://archive.ics.uci.edu/ml/machine-learning-databases/heart-disease/processed.cleveland.data'
     data_columns = ['age', 'sex', 'cp', 'trestbps', 'chol', 'fbs', 'restecg', 'thalach', 'exang', 'oldpeak', 'slope', 'ca',
                     'thal', 'target']
-    df = pd.read_csv(data_url, header=None, names=data_columns, na_values='?')
+    df = pd.read_csv(data_url, header=None, names=data_columns)
     df = df.dropna()
 
-    # Tworzenie nowego okna
+
     browse_window = tk.Toplevel(window)
     browse_window.title("Przeglądanie danych")
 
-    # Tworzenie tabeli
     frame = tk.Frame(browse_window)
     frame.pack(fill="both", expand=True)
 
@@ -114,40 +113,10 @@ def save_model():
     except ValueError as e:
         accuracy_label.config(text=str(e), fg="red")
 
-def add_data():
-    try:
-        global df
-        if df is None:
-            return
-
-        new_data = {
-            'age': float(age_entry.get()),
-            'sex': float(sex_entry.get()),
-            'cp': float(cp_entry.get()),
-            'trestbps': float(trestbps_entry.get()),
-            'chol': float(chol_entry.get()),
-            'fbs': float(fbs_entry.get()),
-            'restecg': float(restecg_entry.get()),
-            'thalach': float(thalach_entry.get()),
-            'exang': float(exang_entry.get()),
-            'oldpeak': float(oldpeak_entry.get()),
-            'slope': float(slope_entry.get()),
-            'ca': float(ca_entry.get()),
-            'thal': float(thal_entry.get())
-        }
-
-        # Dodawanie nowych danych do istniejącego DataFrame
-        df = df.append(new_data, ignore_index=True)
-
-        accuracy_label.config(text="Dane zostały dodane", fg="green")
-
-    except ValueError as e:
-        accuracy_label.config(text=str(e), fg="red")
-
 def load_model():
     try:
         global model
-        # Odczytaj model z pliku
+
         with open('model.pkl', 'rb') as file:
             model = pickle.load(file)
 
@@ -163,11 +132,11 @@ def visualize_data():
     if df is None:
         return
 
-    # Wybierz dwie cechy do wizualizacji
+    # wie cechy do wizualizacji
     feature1 = 'age'
     feature2 = 'chol'
 
-    # Tworzenie wykresu
+    # tworzenie wykresu
     plt.figure(figsize=(8, 6))
     plt.scatter(df[feature1], df[feature2], c=df['target'])
     plt.xlabel(feature1)
@@ -264,9 +233,6 @@ load_model_button.pack(side=tk.LEFT, padx=5)
 
 visualize_button = tk.Button(window, text="Wizualizuj Dane", command=visualize_data)
 visualize_button.pack(side=tk.LEFT, padx=5)
-
-add_data_button = tk.Button(window, text="Dodaj Dane", command=add_data)
-add_data_button.pack(side=tk.LEFT, padx=5)
 
 accuracy_label = tk.Label(window, text="")
 accuracy_label.pack()
