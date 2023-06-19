@@ -25,14 +25,18 @@ def train_model():
         # Krok 3: Podział danych na zbiór treningowy i testowy
         X = df.drop('target', axis=1)
         y = df['target']
+        #20% do testowania a 80 do trenowania
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
         # Krok 4: Trenowanie modelu
         global model
+        #solver saga to optymalizuje wyniki i oblicza sredni gradient dla kazdej probki
         model = LogisticRegression(solver='saga', max_iter=10000)
+        #dopsowywyuje model do danych treningowych
         model.fit(X_train, y_train)
 
         # Krok 5: Testowanie modelu
+        #y_pred przewyidywanie wartosci z X_test
         y_pred = model.predict(X_test)
         accuracy = accuracy_score(y_test, y_pred)
         accuracy_label.config(text=f"Dokładność modelu: {accuracy}", fg="green")
@@ -74,7 +78,9 @@ def predict():
                     'restecg': float(restecg_entry.get()), 'thalach': float(thalach_entry.get()),
                     'exang': float(exang_entry.get()), 'oldpeak': float(oldpeak_entry.get()),
                     'slope': float(slope_entry.get()), 'ca': float(ca_entry.get()), 'thal': float(thal_entry.get())}
+        # dane pobrane z formularza są przetrzymywane jako 1 wiersz
         new_data_df = pd.DataFrame([new_data])
+
         prediction = model.predict(new_data_df)
         prediction_label.config(text=f"Wynik predykcji: {prediction}", fg="green")
 
