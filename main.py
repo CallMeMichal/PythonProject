@@ -30,13 +30,11 @@ def train_model():
 
         # Krok 4: Trenowanie modelu
         global model
-        #solver saga to optymalizuje wyniki i oblicza sredni gradient dla kazdej probki
-        model = LogisticRegression(solver='saga', max_iter=10000)
-        #dopsowywyuje model do danych treningowych
-        model.fit(X_train, y_train)
 
+        model = LogisticRegression(solver='saga', max_iter=10000)
+
+        model.fit(X_train, y_train)
         # Krok 5: Testowanie modelu
-        #y_pred przewyidywanie wartosci z X_test
         y_pred = model.predict(X_test)
         accuracy = accuracy_score(y_test, y_pred)
         accuracy_label.config(text=f"Dokładność modelu: {accuracy}", fg="green")
